@@ -49,6 +49,13 @@ func (t Trie) Insert(key string, value interface{}) {
 	node.value = value
 }
 
+func (t Trie) Print() {
+	for key, _ := range t.children {
+		fmt.Printf("%#U - %T %s\n", key, t.children[key].value, t.children[key].children)
+		t.children[key].Print()
+	}
+}
+
 type Resource interface {
 	Get(url string) string
 	Post(url string, data interface{}) string
@@ -159,6 +166,7 @@ func main() {
 	//router := SimpleRouter{routes: make(map[string]Resource)}
 	router := MatchingRouter{trie: CreateTrie()}
 	router.AddRoute("/", new(ShortyResource))
+	router.trie.Print()
 	rh := MakeRoutingHandler()
 	rh.SetRouter(router)
 	fmt.Println(rh)
