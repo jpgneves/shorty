@@ -34,8 +34,19 @@ func (t Trie) Find(s string) interface{} {
 	return node.value
 }
 
-func (t Trie) Insert(key string, value interface{}) *Trie {
-	return &t
+func (t Trie) Insert(key string, value interface{}) {
+	node := &t
+	for _, r := range key {
+		n := node.Lookup(r)
+		if n != nil {
+			node = n
+		} else {
+			new_node := CreateTrie()
+			node.children[r] = new_node
+			node = new_node
+		}
+	}
+	node.value = value
 }
 
 type Resource interface {
