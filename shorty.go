@@ -113,13 +113,13 @@ func (r MatchingRouter) RemoveRoute(route string) {
 
 func (r MatchingRouter) Route(writer http.ResponseWriter, request *http.Request) {
 	method := request.Method
-	url := request.URL.String()
-	if resource, ok := r.trie.Find(url).(Resource); ok {
+	path := request.URL.Path
+	if resource, ok := r.trie.Find(path).(Resource); ok {
 		switch method {
 		case "GET":
-			fmt.Fprintf(writer, resource.Get(url))
+			fmt.Fprintf(writer, resource.Get(path))
 		case "POST":
-			fmt.Fprintf(writer, resource.Post(url, request.Body))
+			fmt.Fprintf(writer, resource.Post(path, request.Body))
 		default:
 			writer.WriteHeader(http.StatusMethodNotAllowed)
 			fmt.Fprintf(writer, "Error 405 not allowed")
