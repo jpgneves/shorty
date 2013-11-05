@@ -114,8 +114,7 @@ func (r MatchingRouter) RemoveRoute(route string) {
 func (r MatchingRouter) Route(writer http.ResponseWriter, request *http.Request) {
 	method := request.Method
 	url := request.URL.String()
-	resource := r.trie.Find(url).(Resource)
-	if resource != nil {
+	if resource, ok := r.trie.Find(url).(Resource); ok {
 		switch method {
 		case "GET":
 			fmt.Fprintf(writer, resource.Get(url))
