@@ -92,6 +92,38 @@ func (r SimpleRouter) Route(writer http.ResponseWriter, request *http.Request) {
 	}
 }
 
+type MatchingRouter struct {
+	trie* Trie
+}
+
+func (r MatchingRouter) AddRoute(route string, resource Resource) {
+	r.trie.Insert(route, resource)
+}
+
+func (r MatchingRouter) RemoveRoute(route string) {
+
+}
+
+func (r MatchingRouter) Route(writer http.ResponseWriter, request *http.Request) {
+	method := request.Method
+	url := request.URL.String()
+	resource := r.trie.Find(url).(Resource)
+	if resource != nil {
+		switch method {
+		case "GET":
+			fmt.Fprintf(writer, resource.Get(url))
+		case "POST":
+			fmt.Fprintf(writer, resource.Post(url, request.Body))
+		default:
+			writer.WriteHeader(http.StatusMethodNotAllowed)
+			fmt.Fprintf(writer, "Error 405 not allowed")
+		}
+	} else {
+		writer.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(writer, "Error 404 not found")
+	}
+}
+
 type RoutingHandler struct {
 	router Router
 }
@@ -124,7 +156,8 @@ func (r ShortyResource) Post(url string, data interface{}) string {
 }
 
 func main() {
-	router := SimpleRouter{routes: make(map[string]Resource)}
+	//router := SimpleRouter{routes: make(map[string]Resource)}
+	router := MatchingRouter{trie: CreateTrie()}
 	router.AddRoute("/", new(ShortyResource))
 	rh := MakeRoutingHandler()
 	rh.SetRouter(router)
