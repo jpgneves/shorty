@@ -37,3 +37,7 @@ func (r StaticRouter) Route(writer http.ResponseWriter, request *http.Request) {
 		fmt.Fprintf(writer, "Error 404 not found")
 	}
 }
+
+func NewStaticRouter() Router {
+	return StaticRouter{make(map[string]resources.Resource)}
+}
