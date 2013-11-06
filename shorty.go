@@ -1,11 +1,11 @@
 package main
 
 import (
-	"net/http"
 	"github.com/jpgneves/shorty/routers"
+	"net/http"
 )
 
-type ShortyResource struct {}
+type ShortyResource struct{}
 
 func (r ShortyResource) Get(url string) string {
 	return "shorty"
@@ -14,7 +14,6 @@ func (r ShortyResource) Get(url string) string {
 func (r ShortyResource) Post(url string, data interface{}) string {
 	return "shorty post"
 }
-
 
 func main() {
 	router := routers.NewMatchingRouter()
