@@ -20,7 +20,6 @@ func main() {
 	router := routers.NewMatchingRouter()
 	router.AddRoute("/", new(ShortyResource))
 	router.AddRoute("/{id}", new(ShortyResource))
-	rh := routers.MakeRoutingHandler()
-	rh.SetRouter(router)
+	rh := routers.MakeRoutingHandler(router)
 	http.ListenAndServe(":55384", rh)
 }
