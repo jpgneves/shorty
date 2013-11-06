@@ -8,5 +8,5 @@ import (
 type Router interface {
 	AddRoute(route string, resource resources.Resource)
 	RemoveRoute(route string)
-	Route(writer http.ResponseWriter, req *http.Request)
+	Route(req *http.Request) *RouteMatch
 }

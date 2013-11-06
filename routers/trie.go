@@ -7,13 +7,8 @@ type TrieNode interface {
 	PatternName() *string
 	Value() interface{}
 	Lookup(r rune) *TrieNode
-	Find(s string) *Match
+	Find(s string) *RouteMatch
 	Insert(key string, value interface{})
-}
-
-type Match struct {
-	value interface{}
-	matches map[string]string
 }
 
 type Trie struct {
@@ -41,7 +36,7 @@ func (t Trie) Lookup(r rune) *Trie {
 	return nil
 }
 
-func (t Trie) Find(s string) *Match {
+func (t Trie) Find(s string) *RouteMatch {
 	matched_patterns := make(map[string]string)
 	var current_pattern *string
 	var current_value []rune
@@ -70,13 +65,13 @@ func (t Trie) Find(s string) *Match {
 			if current_pattern != nil {
 				continue
 			}
-			return &Match{nil, nil}
+			return &RouteMatch{nil, nil}
 		}
 	}
 	if current_pattern != nil {
 		matched_patterns[*current_pattern] = string(current_value)
 	}
-	return &Match{node.value, matched_patterns}
+	return &RouteMatch{node.value, matched_patterns}
 }
 
 func (t Trie) Insert(key string, value interface{}) {

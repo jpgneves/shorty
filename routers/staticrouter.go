@@ -1,7 +1,6 @@
 package routers
 
 import (
-	"fmt"
 	"github.com/jpgneves/shorty/resources"
 	"net/http"
 )
@@ -18,24 +17,12 @@ func (r StaticRouter) RemoveRoute(route string) {
 	delete(r.routes, route)
 }
 
-func (r StaticRouter) Route(writer http.ResponseWriter, request *http.Request) {
-	fmt.Println(request.Method)
-	method := request.Method
-	url := request.URL.String()
+func (r StaticRouter) Route(request *http.Request) *RouteMatch {
+	url := request.URL.Path
 	if resource, ok := r.routes[url]; ok {
-		switch method {
-		case "GET":
-			fmt.Fprintf(writer, resource.Get(url))
-		case "POST":
-			fmt.Fprintf(writer, resource.Post(url, request.Body))
-		default:
-			writer.WriteHeader(http.StatusMethodNotAllowed)
-			fmt.Fprintf(writer, "Error 405 not allowed")
-		}
-	} else {
-		writer.WriteHeader(http.StatusNotFound)
-		fmt.Fprintf(writer, "Error 404 not found")
+		return &RouteMatch{resource, nil}
 	}
+	return nil
 }
 
 func NewStaticRouter() Router {
