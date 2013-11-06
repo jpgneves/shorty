@@ -112,6 +112,27 @@ func (t Trie) Insert(key string, value interface{}) {
 	node.value = value
 }
 
+func (t Trie) Remove(key string) {
+	in_pattern := false
+	node := &t
+	for _, r := range key {
+		if r == '{' && !in_pattern {
+			in_pattern = true
+		} else if r != '}' && in_pattern {
+		} else if r == '}' && in_pattern {
+			in_pattern = false
+		} else {
+			n := node.Lookup(r)
+			if n != nil {
+				node = n
+			} else {
+				return
+			}
+		}
+	}
+	node.value = nil
+}
+
 func (t Trie) Print() {
 	for key, _ := range t.children {
 		if t.children[key].IsPattern() {

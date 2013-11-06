@@ -19,7 +19,7 @@ func (r MatchingRouter) AddRoute(route string, resource resources.Resource) {
 }
 
 func (r MatchingRouter) RemoveRoute(route string) {
-
+	r.trie.Remove(route)
 }
 
 func (r MatchingRouter) Route(writer http.ResponseWriter, request *http.Request) {
