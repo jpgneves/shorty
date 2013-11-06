@@ -1,18 +1,19 @@
 package main
 
 import (
+	"github.com/jpgneves/shorty/requests"
 	"github.com/jpgneves/shorty/routers"
 	"net/http"
 )
 
 type ShortyResource struct{}
 
-func (r ShortyResource) Get(url string) string {
-	return "shorty"
+func (r ShortyResource) Get(request *requests.Request) *requests.Response {
+	return &requests.Response{http.StatusOK, "shorty"}
 }
 
-func (r ShortyResource) Post(url string, data interface{}) string {
-	return "shorty post"
+func (r ShortyResource) Post(request *requests.Request) *requests.Response {
+	return &requests.Response{http.StatusOK, "shorty post"}
 }
 
 func main() {

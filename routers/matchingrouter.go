@@ -2,7 +2,6 @@ package routers
 
 import (
 	"github.com/jpgneves/shorty/resources"
-	"net/http"
 )
 
 type MatchingRouter struct {
@@ -21,7 +20,6 @@ func (r MatchingRouter) RemoveRoute(route string) {
 	r.trie.Remove(route)
 }
 
-func (r MatchingRouter) Route(request *http.Request) *RouteMatch {
-	path := request.URL.Path
+func (r MatchingRouter) Route(path string) *RouteMatch {
 	return r.trie.Find(path)
 }

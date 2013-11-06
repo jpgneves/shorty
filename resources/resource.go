@@ -1,6 +1,10 @@
 package resources
 
+import (
+	"github.com/jpgneves/shorty/requests"
+)
+
 type Resource interface {
-	Get(url string) string
-	Post(url string, data interface{}) string
+	Get(*requests.Request) *requests.Response
+	Post(*requests.Request) *requests.Response
 }

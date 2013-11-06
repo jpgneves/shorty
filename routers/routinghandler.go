@@ -2,6 +2,7 @@ package routers
 
 import (
 	"fmt"
+	"github.com/jpgneves/shorty/requests"
 	"github.com/jpgneves/shorty/resources"
 	"net/http"
 )
@@ -19,18 +20,23 @@ func (rh *RoutingHandler) SetRouter(r Router) {
 }
 
 func (rh *RoutingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var response *requests.Response
 	if rh.router != nil {
-		match := rh.router.Route(r)
+		path := r.URL.Path
+		match := rh.router.Route(path)
 		if resource, ok := match.value.(resources.Resource); ok {
-			path := r.URL.Path
+			req := &requests.Request{r, match.matches}
 			switch r.Method {
 			case "GET":
-			fmt.Fprintf(w, resource.Get(path))
+				response = resource.Get(req)
 			case "POST":
-				fmt.Fprintf(w, resource.Post(path, r.Body))
+				response = resource.Post(req)
 			default:
 				w.WriteHeader(http.StatusMethodNotAllowed)
+				return
 			}
+			w.WriteHeader(response.StatusCode)
+			fmt.Fprintf(w, response.Data)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}

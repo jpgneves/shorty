@@ -2,7 +2,6 @@ package routers
 
 import (
 	"github.com/jpgneves/shorty/resources"
-	"net/http"
 )
 
 type StaticRouter struct {
@@ -17,9 +16,8 @@ func (r StaticRouter) RemoveRoute(route string) {
 	delete(r.routes, route)
 }
 
-func (r StaticRouter) Route(request *http.Request) *RouteMatch {
-	url := request.URL.Path
-	if resource, ok := r.routes[url]; ok {
+func (r StaticRouter) Route(path string) *RouteMatch {
+	if resource, ok := r.routes[path]; ok {
 		return &RouteMatch{resource, nil}
 	}
 	return nil
