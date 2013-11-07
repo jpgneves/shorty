@@ -32,16 +32,32 @@ func (rh *RoutingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			case "POST":
 				response = resource.Post(req)
 			default:
-				w.WriteHeader(http.StatusMethodNotAllowed)
+				handleError(w, http.StatusMethodNotAllowed)
 				return
 			}
-			w.WriteHeader(response.StatusCode)
-			fmt.Fprintf(w, response.Data)
+			handleResponse(w, r, response)
 		} else {
-			w.WriteHeader(http.StatusNotFound)
+			handleError(w, http.StatusNotFound)
 		}
 	} else {
-		w.WriteHeader(http.StatusNotFound)
+		handleError(w, http.StatusNotFound)
 	}
 	return
+}
+
+func handleResponse(w http.ResponseWriter, r *http.Request, response *requests.Response) {
+	switch response.StatusCode {
+	case http.StatusTemporaryRedirect:
+		fallthrough
+	case http.StatusMovedPermanently:
+		http.Redirect(w, r, response.Data, response.StatusCode)
+	default:
+		w.WriteHeader(response.StatusCode)
+		fmt.Fprintf(w, response.Data)
+	}
+}
+
+func handleError(w http.ResponseWriter, code int) {
+	w.WriteHeader(code)
+	fmt.Fprintf(w, http.StatusText(code))
 }
