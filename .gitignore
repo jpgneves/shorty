@@ -22,6 +22,6 @@ _testmain.go
 *.exe
 
 # Emacs temp files
-*.go~
+*~
 \#*
 .#*
