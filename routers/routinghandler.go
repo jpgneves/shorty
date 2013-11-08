@@ -50,10 +50,16 @@ func handleResponse(w http.ResponseWriter, r *http.Request, response *requests.R
 	case http.StatusTemporaryRedirect:
 		fallthrough
 	case http.StatusMovedPermanently:
-		http.Redirect(w, r, response.Data, response.StatusCode)
+		http.Redirect(w, r, *response.Data, response.StatusCode)
 	default:
 		w.WriteHeader(response.StatusCode)
-		fmt.Fprintf(w, response.Data)
+		var response_txt string
+		if response.Data == nil {
+			response_txt = http.StatusText(response.StatusCode)
+		} else {
+			response_txt = *response.Data
+		}
+		fmt.Fprintf(w, response_txt)
 	}
 }
 
