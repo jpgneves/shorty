@@ -5,7 +5,7 @@ import (
 )
 
 type MatchingRouter struct {
-	trie* Trie
+	trie *Trie
 }
 
 func NewMatchingRouter() Router {

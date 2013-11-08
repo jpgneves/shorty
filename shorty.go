@@ -9,10 +9,10 @@ import (
 	"strconv"
 )
 
-type ShortyResource struct{
-	cache map[string]string
+type ShortyResource struct {
+	cache     map[string]string
 	rev_cache map[string]string
-	counter uint64
+	counter   uint64
 }
 
 func (r *ShortyResource) Get(request *requests.Request) *requests.Response {

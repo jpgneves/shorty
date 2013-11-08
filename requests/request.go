@@ -6,5 +6,5 @@ import (
 
 type Request struct {
 	RawRequest *http.Request
-	Params map[string]string
+	Params     map[string]string
 }

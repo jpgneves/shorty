@@ -13,8 +13,8 @@ type TrieNode interface {
 
 type Trie struct {
 	pattern_name *string
-	value interface{}
-	children map[rune]*Trie
+	value        interface{}
+	children     map[rune]*Trie
 }
 
 func CreateTrie() *Trie {

@@ -1,6 +1,6 @@
 package routers
 
 type RouteMatch struct {
-	value interface{}
+	value   interface{}
 	matches map[string]string
 }
