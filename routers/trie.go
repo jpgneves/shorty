@@ -79,12 +79,12 @@ func (t Trie) Insert(key string, value interface{}) {
 	var pattern_name []rune
 	node := &t
 	for _, r := range key {
-		if r == '{' && !in_pattern {
+		if r == ':' && !in_pattern {
 			in_pattern = true
 			pattern_name = []rune{}
-		} else if r != '}' && in_pattern {
+		} else if r != '/' && in_pattern {
 			pattern_name = append(pattern_name, r)
-		} else if r == '}' && in_pattern {
+		} else if r == '/' && in_pattern {
 			in_pattern = false
 			new_node := CreateTrie()
 			pattern_name_str := string(pattern_name)
@@ -110,10 +110,10 @@ func (t Trie) Remove(key string) {
 	in_pattern := false
 	node := &t
 	for _, r := range key {
-		if r == '{' && !in_pattern {
+		if r == ':' && !in_pattern {
 			in_pattern = true
-		} else if r != '}' && in_pattern {
-		} else if r == '}' && in_pattern {
+		} else if r != '/' && in_pattern {
+		} else if r == '/' && in_pattern {
 			in_pattern = false
 		} else {
 			n := node.Lookup(r)

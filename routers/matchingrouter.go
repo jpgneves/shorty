@@ -13,7 +13,11 @@ func NewMatchingRouter() Router {
 }
 
 func (r MatchingRouter) AddRoute(route string, resource resources.Resource) {
-	r.trie.Insert(route, resource)
+	real_route := route
+	if route[len(route)-1] != '/' {
+		real_route += "/"
+	}
+	r.trie.Insert(real_route, resource)
 }
 
 func (r MatchingRouter) RemoveRoute(route string) {
@@ -21,5 +25,9 @@ func (r MatchingRouter) RemoveRoute(route string) {
 }
 
 func (r MatchingRouter) Route(path string) *RouteMatch {
-	return r.trie.Find(path)
+	real_path := path
+	if path[len(path)-1] == '/' {
+		real_path = path[:len(path)-1]
+	}
+	return r.trie.Find(real_path)
 }

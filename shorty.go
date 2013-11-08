@@ -58,8 +58,8 @@ func main() {
 	router := routers.NewMatchingRouter()
 	router.AddRoute("/", new(SiteResource))
 	shorty := &ShortyResource{make(map[string]string), make(map[string]string), 13370}
-	router.AddRoute("/{id}", shorty)
-	router.AddRoute("/create/{url}", shorty)
+	router.AddRoute("/:id", shorty)
+	router.AddRoute("/create/:url", shorty)
 	rh := routers.MakeRoutingHandler(router)
 	http.ListenAndServe(":55384", rh)
 }
