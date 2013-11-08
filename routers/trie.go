@@ -56,8 +56,7 @@ func (t Trie) Find(s string) *RouteMatch {
 				child := node.children[key]
 				if child.IsPattern() {
 					current_pattern = child.PatternName()
-					current_value = make([]rune, 10, 255)
-					current_value = append(current_value, r)
+					current_value = []rune{r}
 					node = child
 					break
 				}
@@ -82,7 +81,7 @@ func (t Trie) Insert(key string, value interface{}) {
 	for _, r := range key {
 		if r == '{' && !in_pattern {
 			in_pattern = true
-			pattern_name = make([]rune, 15)
+			pattern_name = []rune{}
 		} else if r != '}' && in_pattern {
 			pattern_name = append(pattern_name, r)
 		} else if r == '}' && in_pattern {
