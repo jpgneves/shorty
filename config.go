@@ -7,13 +7,14 @@ import (
 )
 
 type StorageConfiguration struct {
-	Backend *string
-	Location *string
+	Backend  *string
+	Hostname *string
+	Port     int
 }
 
 type Configuration struct {
-	Hostname *string
-	Port int
+	Hostname    *string
+	Port        int
 	StorageConf *StorageConfiguration
 }
 
