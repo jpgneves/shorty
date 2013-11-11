@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/jpgneves/shorty/requests"
 	"github.com/jpgneves/shorty/routers"
+	"github.com/jpgneves/shorty/storage"
 	"html/template"
 	"log"
 	"net/http"
@@ -18,6 +19,7 @@ type ShortyResource struct {
 }
 
 func (r *ShortyResource) Get(request *requests.Request) *requests.Response {
+	log.Println(request.Params["id"])
 	if redirect, ok := r.cache[request.Params["id"]]; ok {
 		return &requests.Response{http.StatusTemporaryRedirect, &redirect}
 	}
@@ -25,11 +27,13 @@ func (r *ShortyResource) Get(request *requests.Request) *requests.Response {
 }
 
 func (r *ShortyResource) Post(request *requests.Request) *requests.Response {
-	if url, ok := request.Params["url"]; ok {
+	url := request.RawRequest.FormValue("url")
+	if url != "" {
 		if cached, ok := r.rev_cache[url]; ok {
 			return &requests.Response{http.StatusOK, &cached}
 		}
 		short := r.shorten(url)
+		log.Printf("Caching %v as %v\n", url, short)
 		r.rev_cache[url] = short
 		r.cache[short] = url
 		return &requests.Response{http.StatusOK, &short}
@@ -42,10 +46,17 @@ func (r *ShortyResource) shorten(url string) string {
 	return strconv.FormatUint(r.counter, 36)
 }
 
-type SiteResource struct{}
+type SiteResource struct{
+	config *Configuration
+}
 
 func (r *SiteResource) Get(request *requests.Request) *requests.Response {
-	t, _ := template.ParseFiles("templates/index.tmpl")
+	filepath := *(r.config.SiteRoot) + request.RawRequest.URL.Path
+	if filepath[len(filepath) - 1] == '/' {
+		filepath += "index.html"
+	}
+	log.Println(filepath)
+	t, _ := template.ParseFiles(filepath)
 	buf := new(bytes.Buffer)
 	t.Execute(buf, request)
 	str := buf.String()
@@ -58,13 +69,18 @@ func (r *SiteResource) Post(request *requests.Request) *requests.Response {
 
 func main() {
 	router := routers.NewMatchingRouter()
-	router.AddRoute("/", new(SiteResource))
+	config := ReadConfig("./shorty.config")
+	router.AddRoute("/", &SiteResource{config})
 	shorty := &ShortyResource{make(map[string]string), make(map[string]string), 13370}
 	router.AddRoute("/:id", shorty)
-	router.AddRoute("/create/:url", shorty)
+	router.AddRoute("/create", shorty)
 	rh := routers.MakeRoutingHandler(router)
-	config := ReadConfig("./shorty.config")
 	addr := fmt.Sprintf("%v:%v", *config.Hostname, config.Port)
 	log.Printf("Starting server on %s", addr)
+	db, err := storage.OpenDB(*config.StorageConf.Backend, *config.StorageConf.Hostname)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer db.Flush()
 	http.ListenAndServe(addr, rh)
 }

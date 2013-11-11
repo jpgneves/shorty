@@ -16,6 +16,7 @@ type Configuration struct {
 	Hostname    *string
 	Port        int
 	StorageConf *StorageConfiguration
+	SiteRoot    *string
 }
 
 func ReadConfig(filename string) *Configuration {

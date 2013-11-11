@@ -25,5 +25,9 @@ func (r MatchingRouter) RemoveRoute(route string) {
 }
 
 func (r MatchingRouter) Route(path string) *RouteMatch {
-	return r.trie.Find(path)
+	real_path := path
+	if path[len(path)-1] != '/' {
+		real_path += "/"
+	}
+	return r.trie.Find(real_path)
 }

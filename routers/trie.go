@@ -49,8 +49,11 @@ func (t Trie) Find(s string) *RouteMatch {
 				matched_patterns[*current_pattern] = string(current_value)
 				current_pattern = nil
 			}
-		} else if current_pattern != nil {
+		} else if current_pattern != nil && r != '/' {
 			current_value = append(current_value, r)
+		} else if current_pattern != nil && r == '/' {
+			matched_patterns[*current_pattern] = string(current_value)
+			current_pattern = nil
 		} else {
 			for key := range node.children {
 				child := node.children[key]
