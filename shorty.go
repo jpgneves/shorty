@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/jpgneves/shorty/requests"
 	"github.com/jpgneves/shorty/routers"
 	"html/template"
@@ -61,5 +62,7 @@ func main() {
 	router.AddRoute("/:id", shorty)
 	router.AddRoute("/create/:url", shorty)
 	rh := routers.MakeRoutingHandler(router)
-	http.ListenAndServe(":55384", rh)
+	config := ReadConfig("./shorty.config")
+	addr := fmt.Sprintf("%v:%v", *config.Hostname, config.Port)
+	http.ListenAndServe(addr, rh)
 }
