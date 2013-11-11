@@ -6,6 +6,7 @@ import (
 	"github.com/jpgneves/shorty/requests"
 	"github.com/jpgneves/shorty/routers"
 	"html/template"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -64,5 +65,6 @@ func main() {
 	rh := routers.MakeRoutingHandler(router)
 	config := ReadConfig("./shorty.config")
 	addr := fmt.Sprintf("%v:%v", *config.Hostname, config.Port)
+	log.Printf("Starting server on %s", addr)
 	http.ListenAndServe(addr, rh)
 }

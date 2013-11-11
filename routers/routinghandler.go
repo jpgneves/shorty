@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/jpgneves/shorty/requests"
 	"github.com/jpgneves/shorty/resources"
+	"log"
 	"net/http"
 )
 
@@ -32,20 +33,21 @@ func (rh *RoutingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			case "POST":
 				response = resource.Post(req)
 			default:
-				handleError(w, http.StatusMethodNotAllowed)
+				handleError(w, r, http.StatusMethodNotAllowed)
 				return
 			}
 			handleResponse(w, r, response)
 		} else {
-			handleError(w, http.StatusNotFound)
+			handleError(w, r, http.StatusNotFound)
 		}
 	} else {
-		handleError(w, http.StatusNotFound)
+		handleError(w, r, http.StatusNotFound)
 	}
 	return
 }
 
 func handleResponse(w http.ResponseWriter, r *http.Request, response *requests.Response) {
+	log.Printf("%s %s - %v", r.Method, r.URL.Path, response.StatusCode)
 	switch response.StatusCode {
 	case http.StatusTemporaryRedirect:
 		fallthrough
@@ -63,7 +65,8 @@ func handleResponse(w http.ResponseWriter, r *http.Request, response *requests.R
 	}
 }
 
-func handleError(w http.ResponseWriter, code int) {
+func handleError(w http.ResponseWriter, r *http.Request, code int) {
+	log.Printf("%s %s - %v", r.Method, r.URL.Path, code)
 	w.WriteHeader(code)
 	fmt.Fprintf(w, http.StatusText(code))
 }
