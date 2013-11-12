@@ -16,6 +16,7 @@ type ShortyResource struct {
 	cache     map[string]string
 	rev_cache map[string]string
 	counter   uint64
+	config    *Configuration
 }
 
 func (r *ShortyResource) Get(request *requests.Request) *requests.Response {
@@ -36,7 +37,8 @@ func (r *ShortyResource) Post(request *requests.Request) *requests.Response {
 		log.Printf("Caching %v as %v\n", url, short)
 		r.rev_cache[url] = short
 		r.cache[short] = url
-		return &requests.Response{http.StatusOK, &short}
+		shorturl := fmt.Sprintf("http://%v:%v/%v", *(r.config.Hostname), r.config.Port, short)
+		return &requests.Response{http.StatusOK, &shorturl}
 	}
 	return &requests.Response{http.StatusBadRequest, nil}
 }
@@ -70,17 +72,17 @@ func (r *SiteResource) Post(request *requests.Request) *requests.Response {
 func main() {
 	router := routers.NewMatchingRouter()
 	config := ReadConfig("./shorty.config")
-	router.AddRoute("/", &SiteResource{config})
-	shorty := &ShortyResource{make(map[string]string), make(map[string]string), 13370}
-	router.AddRoute("/:id", shorty)
-	router.AddRoute("/create", shorty)
-	rh := routers.MakeRoutingHandler(router)
-	addr := fmt.Sprintf("%v:%v", *config.Hostname, config.Port)
-	log.Printf("Starting server on %s", addr)
 	db, err := storage.OpenDB(*config.StorageConf.Backend, *config.StorageConf.Hostname)
 	if err != nil {
 		fmt.Println(err)
 	}
 	defer db.Flush()
+	router.AddRoute("/", &SiteResource{config})
+	shorty := &ShortyResource{make(map[string]string), make(map[string]string), 13370, config}
+	router.AddRoute("/:id", shorty)
+	router.AddRoute("/create", shorty)
+	rh := routers.MakeRoutingHandler(router)
+	addr := fmt.Sprintf("%v:%v", *config.Hostname, config.Port)
+	log.Printf("Starting server on %s", addr)
 	http.ListenAndServe(addr, rh)
 }
