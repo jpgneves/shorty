@@ -49,5 +49,6 @@ func OpenDB(backend, datasource string) (DB, error) {
 	} else if len(datasource) <= 0 {
 		return nil, errors.New("Bad file")
 	}
-	return new(TextDB), nil
+	db := &TextDB{datasource, make(map[string]interface{})}
+	return db, nil
 }
