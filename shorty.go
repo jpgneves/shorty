@@ -3,8 +3,8 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/jpgneves/shorty/requests"
-	"github.com/jpgneves/shorty/routers"
+	"github.com/jpgneves/microbe/requests"
+	"github.com/jpgneves/microbe/routers"
 	"github.com/jpgneves/shorty/storage"
 	"html/template"
 	"log"
