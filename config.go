@@ -13,7 +13,7 @@ type StorageConfiguration struct {
 }
 
 type Configuration struct {
-	Hostname    *string
+	ListenAddr  *string
 	Port        int
 	StorageConf *StorageConfiguration
 	SiteRoot    *string

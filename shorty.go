@@ -8,7 +8,9 @@ import (
 	"github.com/jpgneves/shorty/storage"
 	"html/template"
 	"log"
+	"net"
 	"net/http"
+	"os"
 	"strconv"
 )
 
@@ -47,7 +49,13 @@ func (r *ShortyResource) Post(request *requests.Request) *requests.Response {
 		log.Printf("Caching %v as %v\n", url, short)
 		r.rev_cache[url] = short
 		r.cache[short] = url
-		shorturl := fmt.Sprintf("http://%v:%v/%v", *(r.config.Hostname), r.config.Port, short)
+		var shorturl string
+		if host, err := os.Hostname(); err == nil {
+			hostport := net.JoinHostPort(host, strconv.Itoa(r.config.Port))
+			shorturl = fmt.Sprintf("http://%v/%v", hostport, short)
+		} else {
+			log.Fatal(err)
+		}
 		db, err := storage.OpenDB(*r.config.StorageConf.Backend, *r.config.StorageConf.Hostname)
 		if err != nil {
 			log.Fatal(err)
@@ -98,7 +106,7 @@ func main() {
 	router.AddRoute("/:id", shorty)
 	router.AddRoute("/create", shorty)
 	rh := routers.MakeRoutingHandler(router)
-	addr := fmt.Sprintf("%v:%v", *config.Hostname, config.Port)
+	addr := net.JoinHostPort(*config.ListenAddr, strconv.Itoa(config.Port))
 	log.Printf("Starting server on %s", addr)
 	http.ListenAndServe(addr, rh)
 }
