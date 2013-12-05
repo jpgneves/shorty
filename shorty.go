@@ -19,7 +19,7 @@ type ShortyResource struct {
 	cache     map[string]string
 	rev_cache map[string]string
 	counter   uint64
-	lock      *sync.Mutex
+	lock      *sync.RWMutex
 	config    *Configuration
 	db        *storage.DB
 }
@@ -45,12 +45,14 @@ func NewShortyResource(config *Configuration) *ShortyResource {
 		cache[kv.Key] = str_v
 		rev_cache[str_v] = kv.Key
 	}
-	return &ShortyResource{cache, rev_cache, counter, new(sync.Mutex), config, &db}
+	return &ShortyResource{cache, rev_cache, counter, new(sync.RWMutex), config, &db}
 }
 
 func (r *ShortyResource) Get(request *requests.Request) *requests.Response {
 	id := request.Params["id"]
 	log.Println(id)
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	if redirect, ok := r.cache[id]; ok {
 		return &requests.Response{http.StatusTemporaryRedirect, &redirect}
 	}
@@ -68,9 +70,11 @@ func (r *ShortyResource) Post(request *requests.Request) *requests.Response {
 	if url != "" {
 		db := *(r.db)
 		var shorturl string
+		r.lock.RLock()
 		if cached, ok := r.rev_cache[url]; ok {
 			shorturl = cached
 		} else {
+			r.lock.RUnlock()
 			r.lock.Lock()
 			defer r.lock.Unlock()
 			short := r.shorten(url)

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"sync"
 )
 
 type KeyValue struct {
@@ -22,6 +23,7 @@ type DB interface {
 
 type TextDB struct {
 	filename string
+	mutex *sync.RWMutex
 	data map[string]interface{}
 }
 
@@ -29,7 +31,9 @@ func (t *TextDB) Iterator() chan *KeyValue {
 	c := make(chan *KeyValue)
 	go func() {
 		for k, v := range t.data {
+			t.mutex.RLock()
 			c <- &KeyValue{k, v}
+			t.mutex.RUnlock()
 		}
 		close(c)
 	}()
@@ -37,6 +41,8 @@ func (t *TextDB) Iterator() chan *KeyValue {
 }
 
 func (t *TextDB) Find(key string) interface{} {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
 	if v, ok := t.data[key]; ok {
 		return v
 	}
@@ -44,23 +50,30 @@ func (t *TextDB) Find(key string) interface{} {
 }
 
 func (t *TextDB) Insert(key string, value interface{}) {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
 	t.data[key] = value
 }
 
 func (t *TextDB) Flush() {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
 	f, err := os.OpenFile(t.filename, os.O_RDWR | os.O_APPEND | os.O_CREATE, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer f.Close()
 	writer := csv.NewWriter(f)
+	entry_count := len(t.data)
+	entries := make([][]string, entry_count)
+	idx := 0
 	for k, v := range t.data {
-		line := []string{k, v.(string)}
-		log.Printf("%v storing %v = %v as %v", t.filename, k, v, line)
-		err = writer.Write(line)
-		if err != nil {
-			log.Fatal(err)
-		}
+		entries[idx] = []string{k, v.(string)}
+		idx++
+	}
+	err = writer.WriteAll(entries)
+	if err != nil {
+		log.Fatal(err)
 	}
 	defer writer.Flush()
 	f.Sync()
@@ -72,7 +85,7 @@ func OpenDB(backend, datasource string) (DB, error) {
 	} else if len(datasource) <= 0 {
 		return nil, errors.New("Bad file")
 	}
-	db := &TextDB{datasource, make(map[string]interface{})}
+	db := &TextDB{datasource, new(sync.RWMutex), make(map[string]interface{})}
 	f, err := os.OpenFile(datasource, os.O_RDONLY | os.O_CREATE, 0666)
 	if err != nil {
 		log.Fatal(err)
