@@ -8,7 +8,7 @@ import (
 
 type StorageConfiguration struct {
 	Backend  *string
-	Hostname *string
+	Location *string
 	Port     int
 }
 

@@ -25,7 +25,7 @@ type ShortyResource struct {
 }
 
 func NewShortyResource(config *Configuration) *ShortyResource {
-	db, err := storage.OpenDB(*config.StorageConf.Backend, *config.StorageConf.Hostname)
+	db, err := storage.OpenDB(*config.StorageConf.Backend, *config.StorageConf.Location)
 	if err != nil {
 		log.Fatal(err)
 	}
