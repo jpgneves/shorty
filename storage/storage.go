@@ -1,8 +1,8 @@
 package storage
 
 import (
+	"encoding/csv"
 	"errors"
-	"fmt"
 	"log"
 	"os"
 )
@@ -28,19 +28,25 @@ func (t *TextDB) Find(key string) interface{} {
 
 func (t *TextDB) Insert(key string, value interface{}) {
 	t.data[key] = value
-	t.Flush()
 }
 
 func (t *TextDB) Flush() {
-	f, err := os.Open(t.filename)
+	f, err := os.OpenFile(t.filename, os.O_RDWR | os.O_APPEND | os.O_CREATE, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer f.Close()
+	writer := csv.NewWriter(f)
 	for k, v := range t.data {
-		fmt.Fprintf(f, "%v,%v\n", k, v)
+		line := []string{k, v.(string)}
+		log.Printf("%v storing %v = %v as %v", t.filename, k, v, line)
+		err = writer.Write(line)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
+	defer writer.Flush()
 	f.Sync()
-	f.Close()
 }
 
 func OpenDB(backend, datasource string) (DB, error) {
@@ -50,5 +56,20 @@ func OpenDB(backend, datasource string) (DB, error) {
 		return nil, errors.New("Bad file")
 	}
 	db := &TextDB{datasource, make(map[string]interface{})}
+	f, err := os.OpenFile(datasource, os.O_RDONLY | os.O_CREATE, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+	reader := csv.NewReader(f)
+	entries, err := reader.ReadAll()
+	if err != nil {
+		log.Fatal(err)
+	}
+	for idx := range entries {
+		if len(entries[idx]) >= 2 {
+			db.Insert(entries[idx][0], entries[idx][1])
+		}
+	}
 	return db, nil
 }

@@ -20,9 +20,19 @@ type ShortyResource struct {
 }
 
 func (r *ShortyResource) Get(request *requests.Request) *requests.Response {
-	log.Println(request.Params["id"])
-	if redirect, ok := r.cache[request.Params["id"]]; ok {
+	id := request.Params["id"]
+	log.Println(id)
+	if redirect, ok := r.cache[id]; ok {
 		return &requests.Response{http.StatusTemporaryRedirect, &redirect}
+	}
+	db, err := storage.OpenDB(*r.config.StorageConf.Backend, *r.config.StorageConf.Hostname)
+	if err != nil {
+		return &requests.Response{http.StatusNotFound, nil}
+	}
+	url := db.Find(id)
+	if url != nil {
+		str := url.(string)
+		return &requests.Response{http.StatusTemporaryRedirect, &str}
 	}
 	return &requests.Response{http.StatusNotFound, nil}
 }
@@ -38,6 +48,12 @@ func (r *ShortyResource) Post(request *requests.Request) *requests.Response {
 		r.rev_cache[url] = short
 		r.cache[short] = url
 		shorturl := fmt.Sprintf("http://%v:%v/%v", *(r.config.Hostname), r.config.Port, short)
+		db, err := storage.OpenDB(*r.config.StorageConf.Backend, *r.config.StorageConf.Hostname)
+		if err != nil {
+			log.Fatal(err)
+		}
+		db.Insert(short, url)
+		defer db.Flush()
 		return &requests.Response{http.StatusOK, &shorturl}
 	}
 	return &requests.Response{http.StatusBadRequest, nil}
