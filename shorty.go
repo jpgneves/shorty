@@ -87,7 +87,8 @@ func (r *ShortyResource) Post(request *requests.Request) *requests.Response {
 		} else {
 			log.Fatal(err)
 		}
-		return &requests.Response{http.StatusOK, &shorturl}
+		resp := fmt.Sprintf("<a href=%v>%v</a>", shorturl, shorturl)
+		return &requests.Response{http.StatusOK, &resp}
 	}
 	return &requests.Response{http.StatusBadRequest, nil}
 }
