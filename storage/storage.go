@@ -7,8 +7,14 @@ import (
 	"os"
 )
 
+type KeyValue struct {
+	Key string
+	Value interface{}
+}
+
 // Because I can't compile sqlite3 right now, let's just do a dumb text dump
 type DB interface {
+	Iterator() chan *KeyValue
 	Find(key string) interface{}
 	Insert(key string, value interface{})
 	Flush()
@@ -17,6 +23,17 @@ type DB interface {
 type TextDB struct {
 	filename string
 	data map[string]interface{}
+}
+
+func (t *TextDB) Iterator() chan *KeyValue {
+	c := make(chan *KeyValue)
+	go func() {
+		for k, v := range t.data {
+			c <- &KeyValue{k, v}
+		}
+		close(c)
+	}()
+	return c
 }
 
 func (t *TextDB) Find(key string) interface{} {

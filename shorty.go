@@ -12,13 +12,40 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"sync"
 )
 
 type ShortyResource struct {
 	cache     map[string]string
 	rev_cache map[string]string
 	counter   uint64
+	lock      *sync.Mutex
 	config    *Configuration
+	db        *storage.DB
+}
+
+func NewShortyResource(config *Configuration) *ShortyResource {
+	db, err := storage.OpenDB(*config.StorageConf.Backend, *config.StorageConf.Hostname)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var counter uint64
+	if c := db.Find("counter"); c == nil {
+		counter = 13370
+	} else {
+		counter, err = strconv.ParseUint(c.(string), 10, 64)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	cache := make(map[string]string)
+	rev_cache := make(map[string]string)
+	for kv := range db.Iterator() {
+		str_v := kv.Value.(string)
+		cache[kv.Key] = str_v
+		rev_cache[str_v] = kv.Key
+	}
+	return &ShortyResource{cache, rev_cache, counter, new(sync.Mutex), config, &db}
 }
 
 func (r *ShortyResource) Get(request *requests.Request) *requests.Response {
@@ -27,10 +54,7 @@ func (r *ShortyResource) Get(request *requests.Request) *requests.Response {
 	if redirect, ok := r.cache[id]; ok {
 		return &requests.Response{http.StatusTemporaryRedirect, &redirect}
 	}
-	db, err := storage.OpenDB(*r.config.StorageConf.Backend, *r.config.StorageConf.Hostname)
-	if err != nil {
-		return &requests.Response{http.StatusNotFound, nil}
-	}
+	db := *(r.db)
 	url := db.Find(id)
 	if url != nil {
 		str := url.(string)
@@ -42,26 +66,27 @@ func (r *ShortyResource) Get(request *requests.Request) *requests.Response {
 func (r *ShortyResource) Post(request *requests.Request) *requests.Response {
 	url := request.RawRequest.FormValue("url")
 	if url != "" {
-		if cached, ok := r.rev_cache[url]; ok {
-			return &requests.Response{http.StatusOK, &cached}
-		}
-		short := r.shorten(url)
-		log.Printf("Caching %v as %v\n", url, short)
-		r.rev_cache[url] = short
-		r.cache[short] = url
+		db := *(r.db)
 		var shorturl string
+		if cached, ok := r.rev_cache[url]; ok {
+			shorturl = cached
+		} else {
+			r.lock.Lock()
+			defer r.lock.Unlock()
+			short := r.shorten(url)
+			log.Printf("Caching %v as %v\n", url, short)
+			r.rev_cache[url] = short
+			r.cache[short] = url
+			shorturl = short
+			db.Insert(short, url)
+			defer db.Flush()
+		}
 		if host, err := os.Hostname(); err == nil {
 			hostport := net.JoinHostPort(host, strconv.Itoa(r.config.Port))
-			shorturl = fmt.Sprintf("http://%v/%v", hostport, short)
+			shorturl = fmt.Sprintf("http://%v/%v", hostport, shorturl)
 		} else {
 			log.Fatal(err)
 		}
-		db, err := storage.OpenDB(*r.config.StorageConf.Backend, *r.config.StorageConf.Hostname)
-		if err != nil {
-			log.Fatal(err)
-		}
-		db.Insert(short, url)
-		defer db.Flush()
 		return &requests.Response{http.StatusOK, &shorturl}
 	}
 	return &requests.Response{http.StatusBadRequest, nil}
@@ -69,6 +94,8 @@ func (r *ShortyResource) Post(request *requests.Request) *requests.Response {
 
 func (r *ShortyResource) shorten(url string) string {
 	r.counter += 1
+	db := *(r.db)
+	db.Insert("counter", strconv.FormatUint(r.counter, 10))
 	return strconv.FormatUint(r.counter, 36)
 }
 
@@ -96,13 +123,8 @@ func (r *SiteResource) Post(request *requests.Request) *requests.Response {
 func main() {
 	router := routers.NewMatchingRouter()
 	config := ReadConfig("./shorty.config")
-	db, err := storage.OpenDB(*config.StorageConf.Backend, *config.StorageConf.Hostname)
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer db.Flush()
 	router.AddRoute("/", &SiteResource{config})
-	shorty := &ShortyResource{make(map[string]string), make(map[string]string), 13370, config}
+	shorty := NewShortyResource(config)
 	router.AddRoute("/:id", shorty)
 	router.AddRoute("/create", shorty)
 	rh := routers.MakeRoutingHandler(router)
