@@ -12,11 +12,15 @@ type StorageConfiguration struct {
 	Port     int
 }
 
+type HostPortPair struct {
+	Address *string
+	Port    int
+}
+
 type Configuration struct {
-	ListenAddr  *string
-	Port        int
-	StorageConf *StorageConfiguration
-	SiteRoot    *string
+	ListenAddr  *HostPortPair
+	Storage     *StorageConfiguration
+	WwwRoot     *string
 }
 
 func ReadConfig(filename string) *Configuration {

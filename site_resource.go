@@ -13,7 +13,7 @@ type SiteResource struct{
 }
 
 func (r *SiteResource) Get(request *requests.Request) *requests.Response {
-	filepath := *(r.config.SiteRoot) + request.RawRequest.URL.Path
+	filepath := *(r.config.WwwRoot) + request.RawRequest.URL.Path
 	if filepath[len(filepath) - 1] == '/' {
 		filepath += "index.html"
 	}

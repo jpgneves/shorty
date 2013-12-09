@@ -16,7 +16,7 @@ func main() {
 	router.AddRoute("/:id", shorty)
 	router.AddRoute("/create", shorty)
 	rh := routers.MakeRoutingHandler(router)
-	addr := net.JoinHostPort(*config.ListenAddr, strconv.Itoa(config.Port))
+	addr := net.JoinHostPort(*config.ListenAddr.Address, strconv.Itoa(config.ListenAddr.Port))
 	log.Printf("Starting server on %s", addr)
 	http.ListenAndServe(addr, rh)
 }

@@ -22,7 +22,7 @@ type ShortyResource struct {
 }
 
 func NewShortyResource(config *Configuration) *ShortyResource {
-	db, err := storage.OpenDB(*config.StorageConf.Backend, *config.StorageConf.Location)
+	db, err := storage.OpenDB(*config.Storage.Backend, *config.Storage.Location)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -83,7 +83,7 @@ func (r *ShortyResource) Post(request *requests.Request) *requests.Response {
 			defer db.Flush()
 		}
 		if host, err := os.Hostname(); err == nil {
-			hostport := net.JoinHostPort(host, strconv.Itoa(r.config.Port))
+			hostport := net.JoinHostPort(host, strconv.Itoa(r.config.ListenAddr.Port))
 			shorturl = fmt.Sprintf("http://%v/%v", hostport, shorturl)
 		} else {
 			log.Fatal(err)
