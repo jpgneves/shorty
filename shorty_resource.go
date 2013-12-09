@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/jpgneves/microbe/config"
 	"github.com/jpgneves/microbe/requests"
+	"github.com/jpgneves/microbe/resources"
 	"github.com/jpgneves/shorty/storage"
 	"log"
 	"net"
@@ -17,32 +19,34 @@ type ShortyResource struct {
 	rev_cache map[string]string
 	counter   uint64
 	lock      *sync.RWMutex
-	config    *Configuration
+	config    *config.Configuration
 	db        *storage.DB
 }
 
-func NewShortyResource(config *Configuration) *ShortyResource {
+func (r *ShortyResource) Init(config *config.Configuration) resources.Resource {
 	db, err := storage.OpenDB(*config.Storage.Backend, *config.Storage.Location)
+	r.db = &db
 	if err != nil {
 		log.Fatal(err)
 	}
-	var counter uint64
 	if c := db.Find("counter"); c == nil {
-		counter = 13370
+		r.counter = 13370
 	} else {
-		counter, err = strconv.ParseUint(c.(string), 10, 64)
+		r.counter, err = strconv.ParseUint(c.(string), 10, 64)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
-	cache := make(map[string]string)
-	rev_cache := make(map[string]string)
+	r.cache = make(map[string]string)
+	r.rev_cache = make(map[string]string)
 	for kv := range db.Iterator() {
 		str_v := kv.Value.(string)
-		cache[kv.Key] = str_v
-		rev_cache[str_v] = kv.Key
+		r.cache[kv.Key] = str_v
+		r.rev_cache[str_v] = kv.Key
 	}
-	return &ShortyResource{cache, rev_cache, counter, new(sync.RWMutex), config, &db}
+	r.lock = new(sync.RWMutex)
+
+	return r
 }
 
 func (r *ShortyResource) Get(request *requests.Request) *requests.Response {

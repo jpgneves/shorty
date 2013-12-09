@@ -6,9 +6,12 @@ import (
 
 func main() {
 	microbe := microbe.Init("./shorty.config")
-	microbe.AddRoute("/", &SiteResource{config})
-	shorty := NewShortyResource(config)
-	microbe.AddRoute("/:id", shorty)
-	microbe.AddRoute("/create", shorty)
+	site_res := &SiteResource{}
+	microbe.InitResource(site_res)
+	microbe.AddRoute("/", &SiteResource{})
+	shorty_res := &ShortyResource{}
+	microbe.InitResource(shorty_res)
+	microbe.AddRoute("/:id", shorty_res)
+	microbe.AddRoute("/create", shorty_res)
 	microbe.Start(false)
 }
