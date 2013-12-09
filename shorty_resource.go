@@ -2,14 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/jpgneves/microbe/config"
 	"github.com/jpgneves/microbe/requests"
 	"github.com/jpgneves/microbe/resources"
 	"github.com/jpgneves/shorty/storage"
 	"log"
-	"net"
 	"net/http"
-	"os"
 	"strconv"
 	"sync"
 )
@@ -19,34 +16,34 @@ type ShortyResource struct {
 	rev_cache map[string]string
 	counter   uint64
 	lock      *sync.RWMutex
-	config    *config.Configuration
+	config    *Configuration
 	db        *storage.DB
 }
 
-func (r *ShortyResource) Init(config *config.Configuration) resources.Resource {
+func NewShortyResource(config *Configuration) resources.Resource {
 	db, err := storage.OpenDB(*config.Storage.Backend, *config.Storage.Location)
-	r.db = &db
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	var counter uint64
 	if c := db.Find("counter"); c == nil {
-		r.counter = 13370
+		counter = 13370
 	} else {
-		r.counter, err = strconv.ParseUint(c.(string), 10, 64)
+		counter, err = strconv.ParseUint(c.(string), 10, 64)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
-	r.cache = make(map[string]string)
-	r.rev_cache = make(map[string]string)
+	cache := make(map[string]string)
+	rev_cache := make(map[string]string)
 	for kv := range db.Iterator() {
 		str_v := kv.Value.(string)
-		r.cache[kv.Key] = str_v
-		r.rev_cache[str_v] = kv.Key
+		cache[kv.Key] = str_v
+		rev_cache[str_v] = kv.Key
 	}
-	r.lock = new(sync.RWMutex)
 
-	return r
+	return &ShortyResource{cache, rev_cache, counter, new(sync.RWMutex), config, &db}
 }
 
 func (r *ShortyResource) Get(request *requests.Request) *requests.Response {
@@ -82,15 +79,10 @@ func (r *ShortyResource) Post(request *requests.Request) *requests.Response {
 			log.Printf("Caching %v as %v\n", url, short)
 			r.rev_cache[url] = short
 			r.cache[short] = url
-			shorturl = short
+			hostport := request.RawRequest.Host
+			shorturl = fmt.Sprintf("http://%v/%v", hostport, short)
 			db.Insert(short, url)
 			defer db.Flush()
-		}
-		if host, err := os.Hostname(); err == nil {
-			hostport := net.JoinHostPort(host, strconv.Itoa(r.config.ListenAddr.Port))
-			shorturl = fmt.Sprintf("http://%v/%v", hostport, shorturl)
-		} else {
-			log.Fatal(err)
 		}
 		resp := fmt.Sprintf("<a href=%v>%v</a>", shorturl, shorturl)
 		return &requests.Response{http.StatusOK, &resp}

@@ -2,21 +2,19 @@ package main
 
 import (
 	"bytes"
-	"github.com/jpgneves/microbe/config"
-	"github.com/jpgneves/microbe/resources"
 	"github.com/jpgneves/microbe/requests"
+	"github.com/jpgneves/microbe/resources"
 	"html/template"
 	"log"
 	"net/http"
 )
 
 type SiteResource struct{
-	config *config.Configuration
+	config *Configuration
 }
 
-func (r *SiteResource) Init(config *config.Configuration) resources.Resource {
-	r.config = config
-	return r
+func NewSiteResource(config *Configuration) resources.Resource {
+	return &SiteResource{config}
 }
 
 func (r *SiteResource) Get(request *requests.Request) *requests.Response {
