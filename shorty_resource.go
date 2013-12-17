@@ -70,6 +70,7 @@ func (r *ShortyResource) Post(request *requests.Request) *requests.Response {
 		var shorturl string
 		r.lock.RLock()
 		if cached, ok := r.rev_cache[url]; ok {
+			r.lock.RUnlock()
 			shorturl = cached
 		} else {
 			r.lock.RUnlock()
